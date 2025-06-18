@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Download YouTube videos in various formats and resolutions">
+  <title>YouTube Downloader</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="icon" href="https://www.youtube.com/favicon.ico" type="image/x-icon">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Poppins', sans-serif;
+    }
+
+    body {
+      background: linear-gradient(135deg, #1f1c2c, #928dab);
+      color: #fff;
+      min-height: 100vh;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .container {
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(10px);
+      border-radius: 15px;
+      padding: 30px;
+      width: 100%;
+      max-width: 600px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      margin-bottom: 60px;
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 20px;
+      color: #fff;
+      font-size: 2rem;
+    }
+
+    .input-group {
+      margin-bottom: 20px;
+      position: relative;
+    }
+
+    input[type="text"] {
+      width: 100%;
+      padding: 12px 15px;
+      border-radius: 8px;
+      border: none;
+      background: rgba(255, 255, 255, 0.9);
+      font-size: 1rem;
+      transition: all 0.3s;
+    }
+
+    input[type="text"]:focus {
+      outline: 2px solid #ff0000;
+      box-shadow: 0 0 10px rgba(255, 0, 0, 0.3);
+    }
+
+    .btn {
+      background: #ff0000;
+      color: white;
+      border: none;
+      padding: 12px 20px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 1rem;
+      transition: all 0.3s;
+      width: 100%;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+
+    .btn:hover {
+      background: #cc0000;
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(255, 0, 0, 0.3);
+    }
+
+    .btn:disabled {
+      background: #666;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    .preview {
+      display: none;
+      margin-top: 20px;
+      text-align: center;
+      animation: fadeIn 0.5s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .thumbnail {
+      width: 100%;
+      border-radius: 10px;
+      max-height: 200px;
+      object-fit: cover;
+      margin-bottom: 15px;
+      border: 2px solid rgba(255, 255, 255, 0.2);
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    }
+
+    .video-title {
+      margin-bottom: 15px;
+      word-break: break-word;
+      font-size: 1.2rem;
+    }
+
+    .formats {
+      margin: 20px 0;
+    }
+
+    .format-options {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 15px;
+    }
+
+    select {
+      flex: 1;
+      padding: 10px;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.9);
+      border: none;
+      cursor: pointer;
+    }
+
+    select:focus {
+      outline: 2px solid #ff0000;
+    }
+
+    .format-list {
+      max-height: 200px;
+      overflow-y: auto;
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 8px;
+      padding: 10px;
+      margin-bottom: 15px;
+    }
+
+    .format-item {
+      padding: 10px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      transition: all 0.2s;
+    }
+
+    .format-item:hover {
+      background: rgba(255, 255, 255, 0.1);
+      transform: translateX(5px);
+    }
+
+    .format-item.active {
+      background: rgba(255, 0, 0, 0.2);
+      border-left: 3px solid #ff0000;
+    }
+
+    .file-size {
+      color: #ccc;
+      font-size: 0.9rem;
+    }
+
+    .loader {
+      border: 4px solid rgba(255, 255, 255, 0.3);
+      border-top: 4px solid #ff0000;
+      border-radius: 50%;
+      width: 30px;
+      height: 30px;
+      animation: spin 1s linear infinite;
+      margin: 20px auto;
+      display: none;
+    }
+
+    .error {
+      background: rgba(255, 0, 0, 0.2);
+      border-left: 4px solid #ff0000;
+      padding: 15px;
+      margin: 15px 0;
+      border-radius: 8px;
+      display: none;
+      animation: shake 0.5s;
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      20%, 60% { transform: translateX(-5px); }
+      40%, 80% { transform: translateX(5px); }
+    }
+
+    footer {
+      background: rgba(0, 0, 0, 0.5);
+      color: white;
+      text-align: center;
+      padding: 10px 0;
+      width: 100%;
+      position: fixed;
+      bottom: 0;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .footer-text {
+      display: inline-block;
+      white-space: nowrap;
+      animation: scrollText 15s linear infinite;
+    }
+
+    @keyframes scrollText {
+      0% { transform: translateX(100%); }
+      100% { transform: translateX(-100%); }
+    }
+
+    a {
+      color: #ff0000;
+      text-decoration: none;
+      transition: all 0.3s;
+    }
+
+    a:hover {
+      color: #cc0000;
+      text-decoration: underline;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 600px) {
+      .container {
+        padding: 20px;
+      }
+      
+      h1 {
+        font-size: 1.5rem;
+      }
+      
+      .format-options {
+        flex-direction: column;
+      }
+    }
+
+    /* Scrollbar styling */
+    ::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: rgba(255, 0, 0, 0.5);
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>YouTube Downloader</h1>
+    
+    <div class="input-group">
+      <input type="text" id="urlInput" placeholder="Paste YouTube URL here..." autocomplete="off">
+    </div>
+    
+    <button id="fetchBtn" class="btn">Get Video Info</button>
+    
+    <div class="loader" id="loader"></div>
+    
+    <div class="error" id="errorBox"></div>
+    
+    <div class="preview" id="preview">
+      <img id="thumbnail" class="thumbnail" src="" alt="Video thumbnail" onerror="this.src='https://via.placeholder.com/640x360?text=No+Thumbnail'">
+      <h3 class="video-title" id="videoTitle"></h3>
+      
+      <div class="formats">
+        <div class="format-options">
+          <select id="formatSelect">
+            <option value="mp3">MP3 (Audio Only)</option>
+            <option value="360p">360p</option>
+            <option value="480p">480p</option>
+            <option value="720p" selected>720p (HD)</option>
+            <option value="1080p">1080p (Full HD)</option>
+          </select>
+        </div>
+        
+        <div class="format-list" id="formatList"></div>
+        
+        <div style="margin: 15px 0; text-align: center;">
+          Selected: <strong id="selectedFormat">720p</strong> | 
+          Size: <strong id="fileSize">~0 MB</strong>
+        </div>
+      </div>
+      
+      <button id="downloadBtn" class="btn">Download</button>
+    </div>
+  </div>
+  
+  <footer>
+    <a href="https://mr-aryan-rana.netlify.app/" target="_blank">Contact Us</a>
+    <div class="footer-text">🚀 Developed by Aryan Rana — 2025</div>
+  </footer>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const urlInput = document.getElementById('urlInput');
+      const fetchBtn = document.getElementById('fetchBtn');
+      const downloadBtn = document.getElementById('downloadBtn');
+      const loader = document.getElementById('loader');
+      const errorBox = document.getElementById('errorBox');
+      const preview = document.getElementById('preview');
+      const thumbnail = document.getElementById('thumbnail');
+      const videoTitle = document.getElementById('videoTitle');
+      const formatSelect = document.getElementById('formatSelect');
+      const formatList = document.getElementById('formatList');
+      const selectedFormat = document.getElementById('selectedFormat');
+      const fileSize = document.getElementById('fileSize');
+      
+      let videoInfo = null;
+      let selectedFormatId = null;
+      
+      // Event listeners
+      fetchBtn.addEventListener('click', fetchVideoInfo);
+      downloadBtn.addEventListener('click', downloadVideo);
+      formatSelect.addEventListener('change', updateSelectedFormat);
+      
+      // Also trigger on Enter key
+      urlInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+          fetchVideoInfo();
+        }
+      });
+      
+      async function fetchVideoInfo() {
+        const url = urlInput.value.trim();
+        
+        if (!url) {
+          showError('Please enter a YouTube URL');
+          return;
+        }
+        
+        if (!isValidYouTubeUrl(url)) {
+          showError('Please enter a valid YouTube URL');
+          return;
+        }
+        
+        showLoading(true);
+        hidePreview();
+        hideError();
+        
+        try {
+          const response = await fetch('/preview', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ url })
+          });
+          
+          if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error || 'Failed to fetch video info');
+          }
+          
+          videoInfo = await response.json();
+          
+          if (!videoInfo || !videoInfo.formats || videoInfo.formats.length === 0) {
+            throw new Error('No available formats found for this video');
+          }
+          
+          displayVideoInfo(videoInfo);
+        } catch (err) {
+          showError(err.message);
+          console.error('Fetch error:', err);
+        } finally {
+          showLoading(false);
+        }
+      }
+      
+      function displayVideoInfo(info) {
+        thumbnail.src = info.thumbnail || 'https://via.placeholder.com/640x360?text=No+Thumbnail';
+        videoTitle.textContent = info.title || 'Untitled';
+        
+        renderFormatList(info.formats);
+        selectBestFormat();
+        
+        showPreview();
+      }
+      
+      function renderFormatList(formats) {
+        formatList.innerHTML = '';
+        
+        // Group and sort formats
+        const grouped = groupFormats(formats);
+        
+        if (grouped.length === 0) {
+          showError('No available formats found');
+          return;
+        }
+        
+        grouped.forEach(format => {
+          const item = document.createElement('div');
+          item.className = 'format-item';
+          item.dataset.id = format.id;
+          item.innerHTML = `
+            <div>
+              <strong>${format.quality}</strong> (${format.type.toUpperCase()})
+              ${format.vcodec !== 'none' ? `<br><small>${format.vcodec.split('.')[0]}</small>` : ''}
+            </div>
+            <div class="file-size">~${format.sizeMB} MB</div>
+          `;
+          
+          item.addEventListener('click', () => selectFormat(format.id));
+          formatList.appendChild(item);
+        });
+      }
+      
+      function groupFormats(formats) {
+        const unique = [];
+        const seen = new Set();
+        
+        formats.forEach(format => {
+          const quality = format.height ? `${format.height}p` : 'Audio';
+          const type = format.ext || 'mp4';
+          const key = `${quality}-${type}`;
+          
+          if (!seen.has(key)) {
+            seen.add(key);
+            
+            // Calculate approximate size
+            let sizeMB = 0;
+            if (format.filesize) {
+              sizeMB = Math.round(format.filesize / (1024 * 1024));
+            } else {
+              // Estimate based on resolution and duration (5 min default)
+              const duration = videoInfo.duration || 300;
+              const bitrate = format.tbr || (format.height ? 2000 : 128);
+              sizeMB = Math.round((bitrate * duration) / (8 * 1024));
+            }
+            
+            unique.push({
+              id: format.format_id,
+              quality: quality,
+              type: type,
+              sizeMB: sizeMB,
+              vcodec: format.vcodec || 'none',
+              acodec: format.acodec || 'none'
+            });
+          }
+        });
+        
+        // Sort by quality (descending)
+        return unique.sort((a, b) => {
+          if (a.quality === 'Audio') return 1;
+          if (b.quality === 'Audio') return -1;
+          return parseInt(b.quality) - parseInt(a.quality);
+        });
+      }
+      
+      function selectFormat(formatId) {
+        // Update UI
+        document.querySelectorAll('.format-item').forEach(item => {
+          item.classList.toggle('active', item.dataset.id === formatId);
+        });
+        
+        // Find the selected format
+        const format = videoInfo.formats.find(f => f.format_id === formatId);
+        if (!format) return;
+        
+        selectedFormatId = formatId;
+        
+        // Update the format display
+        const quality = format.height ? `${format.height}p` : 'Audio';
+        const type = format.ext || 'mp4';
+        selectedFormat.textContent = `${quality} (${type.toUpperCase()})`;
+        
+        // Update file size
+        let sizeMB = 0;
+        if (format.filesize) {
+          sizeMB = Math.round(format.filesize / (1024 * 1024));
+        } else {
+          // Estimate size
+          const duration = videoInfo.duration || 300;
+          const bitrate = format.tbr || (format.height ? 2000 : 128);
+          sizeMB = Math.round((bitrate * duration) / (8 * 1024));
+        }
+        fileSize.textContent = `~${sizeMB} MB`;
+        
+        // Update the dropdown
+        formatSelect.value = quality === 'Audio' ? 'mp3' : quality;
+      }
+      
+      function selectBestFormat() {
+        // Try to find preferred formats in order
+        const preferredOrder = ['720p', '480p', '1080p', '360p'];
+        
+        for (const quality of preferredOrder) {
+          const format = videoInfo.formats.find(f => 
+            f.height && `${f.height}p` === quality
+          );
+          if (format) {
+            selectFormat(format.format_id);
+            return;
+          }
+        }
+        
+        // If no preferred formats, select first available
+        if (videoInfo.formats.length > 0) {
+          selectFormat(videoInfo.formats[0].format_id);
+        }
+      }
+      
+      function updateSelectedFormat() {
+        const selectedQuality = formatSelect.value;
+        
+        if (selectedQuality === 'mp3') {
+          // Find the first audio format
+          const audioFormat = videoInfo.formats.find(f => !f.height);
+          if (audioFormat) selectFormat(audioFormat.format_id);
+        } else {
+          // Find the matching video format
+          const height = parseInt(selectedQuality);
+          const videoFormat = videoInfo.formats.find(f => f.height === height);
+          if (videoFormat) selectFormat(videoFormat.format_id);
+        }
+      }
+      
+      async function downloadVideo() {
+        if (!videoInfo || !selectedFormatId) {
+          showError('Please select a format first');
+          return;
+        }
+        
+        showLoading(true);
+        downloadBtn.disabled = true;
+        downloadBtn.textContent = 'Downloading...';
+        
+        try {
+          const response = await fetch('/download', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              url: urlInput.value.trim(),
+              format: formatSelect.value,
+              format_id: selectedFormatId
+            })
+          });
+          
+          if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error || 'Download failed');
+          }
+          
+          // Handle the download
+          const blob = await response.blob();
+          const url = window.URL.createObjectURL(blob);
+          
+          // Extract filename from content-disposition or use a default
+          let filename = 'video.mp4';
+          const contentDisposition = response.headers.get('content-disposition');
+          if (contentDisposition) {
+            const match = contentDisposition.match(/filename="(.+?)"/);
+            if (match) filename = match[1];
+          }
+          
+          // Trigger download
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = filename;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          
+          // Clean up
+          window.URL.revokeObjectURL(url);
+        } catch (err) {
+          showError(err.message);
+          console.error('Download error:', err);
+        } finally {
+          showLoading(false);
+          downloadBtn.disabled = false;
+          downloadBtn.textContent = 'Download';
+        }
+      }
+      
+      function isValidYouTubeUrl(url) {
+        try {
+          const parsed = new URL(url);
+          return ['youtube.com', 'youtu.be', 'm.youtube.com'].some(domain => 
+            parsed.hostname.includes(domain)
+          );
+        } catch {
+          return false;
+        }
+      }
+      
+      function showLoading(show) {
+        loader.style.display = show ? 'block' : 'none';
+        fetchBtn.disabled = show;
+        if (show) {
+          fetchBtn.textContent = 'Processing...';
+        } else {
+          fetchBtn.textContent = 'Get Video Info';
+        }
+      }
+      
+      function showPreview() {
+        preview.style.display = 'block';
+      }
+      
+      function hidePreview() {
+        preview.style.display = 'none';
+      }
+      
+      function showError(message) {
+        errorBox.textContent = message;
+        errorBox.style.display = 'block';
+      }
+      
+      function hideError() {
+        errorBox.style.display = 'none';
+      }
+    });
+  </script>
+</body>
+</html>
